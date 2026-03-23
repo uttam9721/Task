@@ -1,70 +1,114 @@
-import React,{useState,useEffect} from 'react'
+import React, { useState, useEffect } from "react";
 
 const Product = () => {
-    const [data,setData]=useState([])
-    const [currentPage,setCurrentPage]=useState(1);
-    const pageCount=6;
+  const [data, setData] = useState([]);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [loading, setLoading] = useState(true);
 
+  const pageCount = 6;
 
-
-    const fetchData=async()=>{
-        const data=await fetch('https://dummyjson.com/products')
-        const res=await data.json()
-        console.log(res.products);
-        setData(res.products)
+  // Fetch API
+  const fetchData = async () => {
+    try {
+      const res = await fetch("https://dummyjson.com/products");
+      const json = await res.json();
+      setData(json.products);
+      setLoading(false);
+    } catch (error) {
+      console.log(error);
     }
-    useEffect(()=>{
-        fetchData();
-    },[])
+  };
 
+  useEffect(() => {
+    fetchData();
+  }, []);
 
-    const deleteItem=(index)=>{
-        const deleteCart=data.filter((_,i)=>i!==index)
-        setData(deleteCart)
-    }
+  // Delete Item
+  const deleteItem = (id) => {
+    const filtered = data.filter((item) => item.id !== id);
+    setData(filtered);
+  };
 
+  // Pagination Logic
+  const lastIndex = currentPage * pageCount;
+  const firstIndex = lastIndex - pageCount;
+  const products = data.slice(firstIndex, lastIndex);
 
-    const lastIndex=currentPage*pageCount;
-    const firstIndex=lastIndex-pageCount;
+  const totalPages = Math.ceil(data.length / pageCount);
 
-    const product=data.slice(firstIndex,lastIndex);
-    const len=Math.ceil(data.length/pageCount);
+  if (loading) return <h1 className="text-center mt-10">Loading...</h1>;
+
   return (
     <>
-      <div className='grid grid-cols-3 ml-10'>
-        {product.map((item,idx)=>{
-            return(
-                <div className='mx-auto mt-10'>
+      {/* PRODUCTS */}
+      <div className="w-full grid grid-cols-3 gap-5 p-5">
+        {products.map((item) => (
+          <div
+            key={item.id}
+            className="border p-4 rounded-xl shadow hover:scale-105 transition"
+          >
+            <img
+              className="w-full h-40 object-cover rounded"
+              src={item.thumbnail}
+              alt={item.title}
+            />
 
-                <div key={idx} className='grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 '>
-                    
-                        <div className='w-80 border border-[#ccc] gap-2'>
-                            <div className='flex'>
+            <h2 className="font-bold mt-2">{item.title}</h2>
 
-                        <h3 className='w-70 text-center font-bold mt-4'>{item.description.slice(1,60)}</h3>
-                        <p 
-                        onClick={()=>deleteItem(idx)}
-                        className='text-xl font-bold cursor-pointer text-red-600'>X</p>
-                            </div>
-                        <img className='w-70  mx-auto'  src={item.images} alt="" />
-                        </div>
-                </div>
-                
-                </div>
-            )
-        })}
+            <p className="text-sm text-gray-500">
+              {item.description.slice(0, 50)}...
+            </p>
+
+            <p className="mt-2 font-semibold">${item.price}</p>
+
+            <button
+              onClick={() => deleteItem(item.id)}
+              className="bg-red-500 text-white px-3 py-1 mt-2 rounded"
+            >
+              Delete
+            </button>
+          </div>
+        ))}
       </div>
-       <div className='justify-center text-center h-22 mt-10 '>
-                        <button 
-                        disabled={currentPage===1}
-                        onClick={()=>setCurrentPage(currentPage-1)}>Prev</button>
-                        {currentPage} of {len}
-                        <button
-                        disabled={currentPage===len}
-                        onClick={()=>setCurrentPage(currentPage+1)}>Next</button>
-                    </div>
-    </>
-  )
-}
 
-export default Product
+      {/* PAGINATION */}
+      <div className="flex justify-center items-center gap-2 mt-6 flex-wrap">
+        
+        {/* Prev */}
+        <button
+          disabled={currentPage === 1}
+          onClick={() => setCurrentPage(currentPage - 1)}
+          className="px-3 py-1 bg-gray-300 rounded disabled:opacity-50"
+        >
+          Prev
+        </button>
+
+        {/* Page Numbers */}
+        {[...Array(totalPages)].map((_, index) => (
+          <button
+            key={index}
+            onClick={() => setCurrentPage(index + 1)}
+            className={`px-3 py-1 rounded ${
+              currentPage === index + 1
+                ? "bg-blue-500 text-white"
+                : "bg-gray-200"
+            }`}
+          >
+            {index + 1}
+          </button>
+        ))}
+
+        {/* Next */}
+        <button
+          disabled={currentPage === totalPages}
+          onClick={() => setCurrentPage(currentPage + 1)}
+          className="px-3 py-1 bg-gray-300 rounded disabled:opacity-50"
+        >
+          Next
+        </button>
+      </div>
+    </>
+  );
+};
+
+export default Product;
